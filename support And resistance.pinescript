@@ -1,0 +1,74 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ahrzerod
+
+//@version=5
+indicator("AHR Indicator",overlay = true,max_labels_count=500,max_lines_count = 500)
+
+
+var line[] supportmemory = array.new_line()
+var int supportreset=0
+var line[] resistancememory = array.new_line()
+var int resistancereset=0
+distance=input.float(0.001,'Distance',step = 0.0001,tooltip = 'Distance between Two consecutive pivots')
+
+rsi=ta.rsi(close,9)
+cmo= ta.cmo(close,9)
+hpivot=ta.pivothigh(close,input(2),input(2))
+lpivot=ta.pivotlow(close,input(2),input(2))
+
+// support = rsi<30  and lpivot and cmo<-30
+support = lpivot
+resistance=hpivot
+// resistance= rsi>70 and hpivot and cmo>30
+// xup:=support ? low : xup[1]
+// xdown := resistance ? high : xdown[1]
+
+if (support)
+    if(supportmemory.size()>0)
+        prev_low=supportmemory.last()
+        if (math.abs(low-prev_low.get_y1())<distance)
+            //label.new(bar_index,low,str.tostring(prev_low.get_y1()),size=size.normal,textcolor = color.white)
+            prev_low.set_x2(bar_index-1)
+            prev_low.set_y1(math.min(low,prev_low.get_y1()))
+            prev_low.set_y2(math.min(low,prev_low.get_y2()))
+        else
+            if(supportreset>=2)
+                supportmemory.pop()
+                supportreset:=0
+            else
+                supportreset+=1
+            
+    else
+        // supportmemory.push(low)
+        //label.new(bar_index,low,str.tostring("support detected"),size=size.normal,textcolor = color.white)
+        supportmemory.push(line.new(bar_index-1, low, bar_index-1, low, extend=extend.none, color=color.green, width=3))
+        
+
+if (resistance)
+    if(resistancememory.size()>0)
+        prev_high=resistancememory.last()
+        if(math.abs(high-prev_high.get_y1())<distance)
+            prev_high.set_x2(bar_index-1)
+            prev_high.set_y1(math.max(high,prev_high.get_y1()))
+            prev_high.set_y2(math.max(high,prev_high.get_y2()))
+        else
+            if(resistancereset>=2)
+                resistancememory.pop()
+                resistancereset:=0
+            else
+                resistancereset+=1
+            // resistancememory.pop()
+            // prev_high.set_y2(high)
+    else
+        //label.new(bar_index,high,str.tostring("resistance detected"),size=size.normal,textcolor = color.white)
+        resistancememory.push(line.new(bar_index-1, high, bar_index-1, high, extend=extend.none, color=color.red, width=3))
+
+// tf1 = request.security(syminfo.tickerid, input('30', title="SR1 Timeframe"), xup, lookahead=barmerge.lookahead_on)
+// tf2 = request.security(syminfo.tickerid, input('30', title="SR2 Timeframe"), xdown, lookahead=barmerge.lookahead_on)
+//Plot
+// plot(xup, "SR1", color=color.green, linewidth=5, style=plot.style_circles, join=false, editable=true)
+// plot(xdown, "SR2", color=color.red, linewidth=5, style=plot.style_circles, join=false, editable=true)
+// plot(hpivot, style=plot.style_cross, linewidth=3, color= color.red)
+// plot(lpivot, style=plot.style_cross, linewidth=3, color= color.green)
+
+
